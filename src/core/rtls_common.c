@@ -78,6 +78,7 @@ rats_tls_log_level_t rtls_loglevel_getenv(const char *name)
 	return RATS_TLS_LOG_LEVEL_DEFAULT;
 }
 
+// 对rats-tls的所有实例初始化，通过判断输入的实例名字，调用不同实例的初始化函数，从而去调用不同实例的初始化的注册函数
 rats_tls_err_t rtls_instance_init(const char *name, __attribute__((unused)) const char *realpath,
 				  __attribute__((unused)) void **handle)
 {

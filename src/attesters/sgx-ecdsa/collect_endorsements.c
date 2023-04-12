@@ -17,6 +17,7 @@
 #include <sgx_ql_quote.h>
 // clang-format on
 
+// 收集endorsements
 enclave_attester_err_t sgx_ecdsa_collect_endorsements(enclave_attester_ctx_t *ctx,
 						      attestation_evidence_t *evidence,
 						      attestation_endorsement_t *endorsements)

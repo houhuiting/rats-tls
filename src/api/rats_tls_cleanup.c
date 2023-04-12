@@ -14,6 +14,7 @@
 #include "internal/verifier.h"
 #include "internal/tls_wrapper.h"
 
+// Rats TLS应用调用Rats TLS API rats_tls_cleanup()清理Rats TLS运行环境
 rats_tls_err_t rats_tls_cleanup(rats_tls_handle handle)
 {
 	rtls_core_context_t *ctx = (rtls_core_context_t *)handle;
@@ -26,28 +27,33 @@ rats_tls_err_t rats_tls_cleanup(rats_tls_handle handle)
 	    !handle->verifier->opts->cleanup)
 		return -RATS_TLS_ERR_INVALID;
 
+	// 调用核心层的free_claims_list()函数释放掉custom_claims
 	if (ctx->config.custom_claims) {
 		free_claims_list(ctx->config.custom_claims, ctx->config.custom_claims_length);
 	}
 
+	// 调用TLS Wrapper实例中的cleanup()方法来释放掉ssl上下文信息
 	tls_wrapper_err_t err = handle->tls_wrapper->opts->cleanup(handle->tls_wrapper);
 	if (err != TLS_WRAPPER_ERR_NONE) {
 		RTLS_DEBUG("failed to clean up tls wrapper %#x\n", err);
 		return err;
 	}
 
+	// 调用Enclave Attester实例中的cleanup()方法来释放Attester上下文信息
 	enclave_attester_err_t err_ea = handle->attester->opts->cleanup(handle->attester);
 	if (err_ea != ENCLAVE_ATTESTER_ERR_NONE) {
 		RTLS_DEBUG("failed to clean up attester %#x\n", err_ea);
 		return -RATS_TLS_ERR_INVALID;
 	}
 
+	// 调用Enclave Verifier实例cleanup()方法来释放Verifier上下文信息
 	enclave_verifier_err_t err_ev = handle->verifier->opts->cleanup(handle->verifier);
 	if (err_ev != ENCLAVE_VERIFIER_ERR_NONE) {
 		RTLS_DEBUG("failed to clean up verifier %#x\n", err_ev);
 		return -RATS_TLS_ERR_INVALID;
 	}
 
+	// 释放掉核心层的上下文信息
 	free(ctx);
 
 	return RATS_TLS_ERR_NONE;

@@ -113,6 +113,7 @@ done:
 	return result;
 }
 
+// 验证TLS证书的回调函数
 int verify_certificate(int preverify_ok, X509_STORE_CTX *ctx)
 {
 	RTLS_DEBUG(
@@ -151,6 +152,7 @@ int verify_certificate(int preverify_ok, X509_STORE_CTX *ctx)
 	#endif
 #endif
 
+	// 获取证书以及和证书关联的tls_wrapper_ctx_t *ctx
 	X509_STORE *cert_store = X509_STORE_CTX_get0_store(ctx);
 	tls_wrapper_ctx_t *tls_ctx = X509_STORE_get_ex_data(cert_store, openssl_ex_data_idx);
 	if (!tls_ctx) {
@@ -200,6 +202,7 @@ int verify_certificate(int preverify_ok, X509_STORE_CTX *ctx)
 	}
 
 	/* Get pubkey in SubjectPublicKeyInfo format from cert */
+	// 从证书中获取 SubjectPublicKeyInfo 格式的公钥，并将公钥写入到pubkey_buffer中
 	EVP_PKEY *pkey = X509_get_pubkey(cert);
 	if (!pkey) {
 		RTLS_ERR("Unable to decode the public key from certificate\n");
@@ -214,6 +217,7 @@ int verify_certificate(int preverify_ok, X509_STORE_CTX *ctx)
 	/* Extract the RATS-TLS certificate evidence_buffer(optional for nullverifier) and endorsements_buffer(optional) from the TLS
 	 * certificate extension.
 	 */
+	// 从TLS 中提取 RATS-TLS 证书 evidence_buffer 和 endorsements_buffer
 	uint8_t *evidence_buffer = NULL;
 	size_t evidence_buffer_size = 0;
 	uint8_t *endorsements_buffer = NULL;
@@ -235,6 +239,7 @@ int verify_certificate(int preverify_ok, X509_STORE_CTX *ctx)
 		return rc;
 	}
 
+	// 调用对应的Enclave Verifier实例的tls_wrapper_verify_certificate_extension方法验证证书
 	tls_wrapper_err_t t_err = tls_wrapper_verify_certificate_extension(
 		tls_ctx, pubkey_buffer, pubkey_buffer_size, evidence_buffer, evidence_buffer_size,
 		endorsements_buffer, endorsements_buffer_size);

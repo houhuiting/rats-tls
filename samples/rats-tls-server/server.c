@@ -19,7 +19,7 @@
 #include <rats-tls/log.h>
 #include <rats-tls/claim.h>
 
-#define DEFAULT_PORT 1234
+#define DEFAULT_PORT 123456
 #define DEFAULT_IP   "127.0.0.1"
 
 // clang-format off

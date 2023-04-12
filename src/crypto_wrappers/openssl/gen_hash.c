@@ -8,6 +8,7 @@
 #include <rats-tls/crypto_wrapper.h>
 #include <openssl/sha.h>
 
+// 生成hash值
 crypto_wrapper_err_t openssl_gen_hash(crypto_wrapper_ctx_t *ctx, hash_algo_t hash_algo,
 				      const uint8_t *data, size_t size, uint8_t *hash)
 {

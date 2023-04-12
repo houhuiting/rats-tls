@@ -20,6 +20,7 @@ crypto_wrapper_err_t openssl_gen_cert(crypto_wrapper_ctx_t *ctx, rats_tls_cert_a
 				      rats_tls_cert_info_t *cert_info);
 crypto_wrapper_err_t openssl_cleanup(crypto_wrapper_ctx_t *ctx);
 
+// 设置一个静态的crypto_wrapper_opts_t参数openssl_opts
 static const crypto_wrapper_opts_t openssl_opts = {
 	.api_version = CRYPTO_WRAPPER_API_VERSION_DEFAULT,
 	.name = "openssl",
@@ -41,6 +42,7 @@ static void __attribute__((constructor)) libcrypto_wrapper_openssl_init(void)
 {
 	RTLS_DEBUG("called\n");
 
+	// 使用静态的crypto_wrapper_opts_t参数openssl_opts来注册crypto_wrapper
 	crypto_wrapper_err_t err = crypto_wrapper_register(&openssl_opts);
 	if (err != CRYPTO_WRAPPER_ERR_NONE)
 		RTLS_ERR("failed to register the crypto wrapper 'openssl' %#x\n", err);

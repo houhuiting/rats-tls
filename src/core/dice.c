@@ -37,6 +37,7 @@ bool tag_is_valid(uint64_t tag)
 	return OCBR_TAG_EVIDENCE_MIN <= tag && tag <= OCBR_TAG_EVIDENCE_MAX;
 }
 
+// 获取evidence->ecdsa.quote_len的大小，并返回evidence->ecdsa.quote
 const uint8_t *evidence_get_raw_as_ref(const attestation_evidence_t *evidence, size_t *size_out)
 {
 	const uint8_t *data = NULL;
@@ -75,6 +76,7 @@ const uint8_t *evidence_get_raw_as_ref(const attestation_evidence_t *evidence, s
 	return data;
 }
 
+// 把cbor类型的evidence->ecdsa.quote(customs-buffer-hash)取出，存入evidence中
 int evidence_from_raw(const uint8_t *data, size_t size, uint64_t tag,
 		      attestation_evidence_t *evidence)
 {
@@ -95,10 +97,12 @@ int evidence_from_raw(const uint8_t *data, size_t size, uint64_t tag,
 		return 1;
 	}
 
+	// 初始化一下evidence
 	memset(evidence, 0, sizeof(attestation_evidence_t));
 
 	if (tag == OCBR_TAG_EVIDENCE_INTEL_TEE_QUOTE) {
 		/* Use a simplified header structure to distinguish between SGX (EPID and ECDSA) and TDX (ECDSA) quote types */
+		// 使用简化的标头结构来区分 SGX（EPID 和 ECDSA）和 TDX（ECDSA）quote类型
 		typedef struct {
 			uint16_t version;
 			uint16_t att_key_type;
@@ -155,13 +159,14 @@ int evidence_from_raw(const uint8_t *data, size_t size, uint64_t tag,
 /*
 * DICE related attester functions
 */
-
+// 生成claim中cbor格式的pubkey-hash-value，pubkey-hash-value: [ hash-alg-id, hash-value ]
 enclave_attester_err_t dice_generate_pubkey_hash_value_buffer(hash_algo_t pubkey_hash_algo,
 							      const uint8_t *pubkey_hash,
 							      uint8_t **pubkey_hash_value_buffer,
 							      size_t *pubkey_hash_value_buffer_size)
 {
 	enclave_attester_err_t ret;
+	// root是一个cbor格式数组
 	cbor_item_t *root = NULL;
 
 	*pubkey_hash_value_buffer = NULL;
@@ -169,14 +174,17 @@ enclave_attester_err_t dice_generate_pubkey_hash_value_buffer(hash_algo_t pubkey
 
 	/* The `pubkey-hash` value is a byte string of the definite-length encoded CBOR array `hash-entry` */
 	/* pubkey-hash-value: [ hash-alg-id, hash-value ] */
+	// pubkey-hash值为定长编码的CBOR数组hash-entry的字节串
 	ret = ENCLAVE_ATTESTER_ERR_NO_MEM;
 	root = cbor_new_definite_array(2);
 	if (!root)
 		goto err;
 	/* Note that since IANA assigns range of 0-63 to the hash function id, we can assume that uint8 is sufficient */
+	// 将pubkey_hash_algo转为cbor格式数据，再将这个数据添加到root数组里面
 	if (!cbor_array_push(root, cbor_move(cbor_build_uint8(pubkey_hash_algo))))
 		goto err;
 
+	// 获取pubkey_hash_algo算法的输出长度
 	size_t hash_size = hash_size_of_algo(pubkey_hash_algo);
 	if (hash_size == 0) {
 		RTLS_FATAL(
@@ -186,10 +194,17 @@ enclave_attester_err_t dice_generate_pubkey_hash_value_buffer(hash_algo_t pubkey
 		goto err;
 	}
 
+	// 将pubkey_hash转为cbor格式数据，再将这个数据添加到root数组里面
 	if (!cbor_array_push(root, cbor_move(cbor_build_bytestring(pubkey_hash, hash_size))))
 		goto err;
 
+<<<<<<< HEAD
 	if (!cbor_serialize_alloc(root, pubkey_hash_value_buffer, pubkey_hash_value_buffer_size))
+=======
+	// 将cbor格式数组root放到pubkey_hash_value_buffer中，并将长度存到pubkey_hash_value_buffer_size中
+	*pubkey_hash_value_buffer_size = cbor_serialize_alloc(root, pubkey_hash_value_buffer, NULL);
+	if (!*pubkey_hash_value_buffer_size)
+>>>>>>> Added code comments
 		goto err;
 
 	ret = ENCLAVE_ATTESTER_ERR_NONE;
@@ -199,6 +214,8 @@ err:
 	return ret;
 }
 
+// 生成cbor格式的claims_buffer，包括[ key: pubkey-hash, value: pubkey-hash-value ]和其他用户自定义的claims值
+// 其中pubkey-hash-value的格式是：pubkey-hash-value: [ hash-alg-id, hash-value ]
 enclave_attester_err_t
 dice_generate_claims_buffer(hash_algo_t pubkey_hash_algo, const uint8_t *pubkey_hash,
 			    const claim_t *custom_claims, size_t custom_claims_length,
@@ -212,11 +229,13 @@ dice_generate_claims_buffer(hash_algo_t pubkey_hash_algo, const uint8_t *pubkey_
 	/* claims-buffer: { "pubkey-hash" : h'<pubkey-hash-value>', "nonce" : h'<nonce-value>'} */
 	/* Note that the nonce is optional, it's for per-session freshness, which we don't support it yet. */
 	ret = ENCLAVE_ATTESTER_ERR_NO_MEM;
+	// 创建指定大小的cbor Map对象
 	root = cbor_new_definite_map(1 + custom_claims_length);
 	if (!root)
 		goto err;
 
 	/* Prepare custom claim `pubkey-hash` and add to map */
+	// 生成claim中cbor格式的pubkey-hash-value，pubkey-hash-value: [ hash-alg-id, hash-value ]
 	ret = dice_generate_pubkey_hash_value_buffer(pubkey_hash_algo, pubkey_hash,
 						     &pubkey_hash_value_buffer,
 						     &pubkey_hash_value_buffer_size);
@@ -224,6 +243,7 @@ dice_generate_claims_buffer(hash_algo_t pubkey_hash_algo, const uint8_t *pubkey_
 		goto err;
 
 	ret = ENCLAVE_ATTESTER_ERR_NO_MEM;
+	// 在cbor Map对象中，添加[ key: pubkey-hash, value: pubkey-hash-value ]这个键值对
 	if (!cbor_map_add(root, (struct cbor_pair) {
 					.key = cbor_move(cbor_build_string(CLAIM_PUBLIC_KEY_HASH)),
 					.value = cbor_move(cbor_build_bytestring(
@@ -234,6 +254,7 @@ dice_generate_claims_buffer(hash_algo_t pubkey_hash_algo, const uint8_t *pubkey_
 	pubkey_hash_value_buffer = NULL;
 
 	/* Add all user-defined claims to map */
+	// 接下来，将用户自定义的claims值添加进cbor Map对象中
 	ret = ENCLAVE_ATTESTER_ERR_NO_MEM;
 	for (size_t i = 0; i < custom_claims_length; i++) {
 		if (!cbor_map_add(root,
@@ -247,7 +268,13 @@ dice_generate_claims_buffer(hash_algo_t pubkey_hash_algo, const uint8_t *pubkey_
 
 	/* Generate claims buffer */
 	ret = ENCLAVE_ATTESTER_ERR_NO_MEM;
+<<<<<<< HEAD
 	if (!cbor_serialize_alloc(root, claims_buffer_out, claims_buffer_size_out))
+=======
+	// 将cbor map 格式的 root放到claims_buffer_out中，并将长度存到claims_buffer_size_out中
+	*claims_buffer_size_out = cbor_serialize_alloc(root, claims_buffer_out, NULL);
+	if (!*claims_buffer_size_out)
+>>>>>>> Added code comments
 		goto err;
 
 	ret = ENCLAVE_ATTESTER_ERR_NONE;
@@ -259,6 +286,7 @@ err:
 	return ret;
 }
 
+// 生成cbor格式的evidence_buffer，内容是evidence_buffer: <tag1>([ evidence->ecdsa.quote(customs-buffer-hash), claims-buffer ])
 enclave_attester_err_t dice_generate_evidence_buffer_with_tag(
 	const attestation_evidence_t *evidence, const uint8_t *claims_buffer,
 	const size_t claims_buffer_size, uint8_t **evidence_buffer_out,
@@ -271,33 +299,49 @@ enclave_attester_err_t dice_generate_evidence_buffer_with_tag(
 	/* evidence_buffer is a tagged CBOR definite-length array with two entries */
 	/* evidence_buffer: <tag1>([ TEE_ECDSA_quote(customs-buffer-hash), claims-buffer ]) */
 	ret = ENCLAVE_ATTESTER_ERR_INVALID;
+	// 对不同的evidence_type类型有不一样的标签，如sgx_ecdsa的标签是OCBR_TAG_EVIDENCE_INTEL_TEE_QUOTE
 	uint64_t tag_value = tag_of_evidence_type(evidence->type);
 	if (!tag_value)
 		goto err;
 
 	ret = ENCLAVE_ATTESTER_ERR_NO_MEM;
+	// 使用tag_value创建一个cbor标签对象，并赋值给root
 	root = cbor_new_tag(tag_value);
 	if (!root)
 		goto err;
+	
+	// 创建一个长度为2的cbor 数组对象
 	array = cbor_new_definite_array(2);
 	if (!array)
 		goto err;
 
 	ret = ENCLAVE_ATTESTER_ERR_INVALID;
 	size_t evidence_raw_size = 0;
+	//  获取evidence->ecdsa.quote_len的大小，存入evidence_raw_size中，并将evidence->ecdsa.quote，存入evidence_raw_ref中
 	const uint8_t *evidence_raw_ref = evidence_get_raw_as_ref(evidence, &evidence_raw_size);
 	if (!evidence_raw_ref)
 		goto err;
 
 	ret = ENCLAVE_ATTESTER_ERR_NO_MEM;
+	// 在cbor 数组中添加evidence->ecdsa.quote
 	if (!cbor_array_push(array,
 			     cbor_move(cbor_build_bytestring(evidence_raw_ref, evidence_raw_size))))
 		goto err;
+	
+	// 在cbor 数组中添加claims_buffer
 	if (!cbor_array_push(array,
 			     cbor_move(cbor_build_bytestring(claims_buffer, claims_buffer_size))))
 		goto err;
+	
+	// 为cbor数据项array设置标记root
 	cbor_tag_set_item(root, array);
+<<<<<<< HEAD
 	if (!cbor_serialize_alloc(root, evidence_buffer_out, evidence_buffer_size_out))
+=======
+	// 将evidence_buffer: <tag1>([ evidence->ecdsa.quote(customs-buffer-hash), claims-buffer ])，放到evidence_buffer_out中，并返回长度
+	*evidence_buffer_size_out = cbor_serialize_alloc(root, evidence_buffer_out, NULL);
+	if (!*evidence_buffer_size_out)
+>>>>>>> Added code comments
 		goto err;
 
 	ret = ENCLAVE_ATTESTER_ERR_NONE;
@@ -309,6 +353,7 @@ err:
 	return ret;
 }
 
+// 生成cbor格式的endorsements_buffer，内容是<tag1>([h'<VERSION>', h'<TCB_INFO>', h'<TCB_ISSUER_CHAIN>', h'<CRL_PCK_CERT>', h'<CRL_PCK_PROC_CA>', h'<CRL_ISSUER_CHAIN_PCK_CERT>', h'<QE_ID_INFO>', h'<QE_ID_ISSUER_CHAIN>', h'<CREATION_DATETIME>'])
 enclave_attester_err_t dice_generate_endorsements_buffer_with_tag(
 	const char *type, const attestation_endorsement_t *endorsements,
 	uint8_t **endorsements_buffer_out, size_t *endorsements_buffer_size_out)
@@ -429,6 +474,8 @@ err:
 		memcpy(buffer_field, cbor_bytestring_handle(cbor_object), buffer_size_field); \
 	}
 
+// 从 evidence_buffer 中获取 evidence struct 和 claims_buffer。
+// 在dice_generate_evidence_buffer_with_tag函数中，evidence_buffer的内容是evidence_buffer: <tag1>([ evidence->ecdsa.quote(customs-buffer-hash), claims-buffer ])
 enclave_verifier_err_t dice_parse_evidence_buffer_with_tag(const uint8_t *evidence_buffer,
 							   size_t evidence_buffer_size,
 							   attestation_evidence_t *evidence,
@@ -437,6 +484,7 @@ enclave_verifier_err_t dice_parse_evidence_buffer_with_tag(const uint8_t *eviden
 {
 	enclave_verifier_err_t ret = ENCLAVE_VERIFIER_ERR_CBOR;
 
+	// 初始化
 	cbor_item_t *root = NULL;
 	cbor_item_t *array = NULL;
 	cbor_item_t *array_0 = NULL;
@@ -448,6 +496,8 @@ enclave_verifier_err_t dice_parse_evidence_buffer_with_tag(const uint8_t *eviden
 	*claims_buffer_size_out = 0;
 
 	/* Parse evidence_buffer as cbor data: an encoded tagged CBOR definite-length array with two entries. */
+	// 将 evidence_buffer 解析为 cbor 数据：带有两个元素的编码标记 CBOR 定长数组。
+	// <tag1>([ evidence->ecdsa.quote(customs-buffer-hash), claims-buffer ])
 	struct cbor_load_result result;
 	root = cbor_load(evidence_buffer, evidence_buffer_size, &result);
 	if (result.error.code != CBOR_ERR_NONE) {
@@ -459,6 +509,7 @@ enclave_verifier_err_t dice_parse_evidence_buffer_with_tag(const uint8_t *eviden
 	}
 
 	/* Check cbor tag */
+	// 判断root中是否是合法的CBOR标签
 	RATS_VERIFIER_CBOR_ASSERT(cbor_isa_tag(root));
 	if (!tag_is_valid(cbor_tag_value(root))) {
 		RTLS_ERR("Bad cbor data: invalid cbor tag got: 0x%zx\n", cbor_tag_value(root));
@@ -466,6 +517,8 @@ enclave_verifier_err_t dice_parse_evidence_buffer_with_tag(const uint8_t *eviden
 	}
 
 	/* Size of array should be 2 */
+	// 将CBOR数据字节流中的标签值和其后的数据项打包成一个cbor_tag_item结构体
+	// 判断cbor_tag_item结构体array是否是合法的
 	array = cbor_tag_item(root);
 	RATS_VERIFIER_CBOR_ASSERT(cbor_isa_array(array));
 	RATS_VERIFIER_CBOR_ASSERT(cbor_array_is_definite(array));
@@ -477,6 +530,7 @@ enclave_verifier_err_t dice_parse_evidence_buffer_with_tag(const uint8_t *eviden
 	}
 
 	/* Recover evidence data */
+	// 把array中的第一个元素（evidence->ecdsa.quote(customs-buffer-hash)）取出，判断是否合法，并存入evidence中
 	array_0 = cbor_array_get(array, 0);
 	RATS_VERIFIER_CBOR_ASSERT(cbor_isa_bytestring(array_0));
 	RATS_VERIFIER_CBOR_ASSERT(cbor_bytestring_is_definite(array_0));
@@ -486,6 +540,7 @@ enclave_verifier_err_t dice_parse_evidence_buffer_with_tag(const uint8_t *eviden
 		goto err;
 
 	/* The 2nd element is claims_buffer */
+	// 把array中的第二个元素 claims_buffer 取出，判断是否合法，并存入claims_buffer中
 	array_1 = cbor_array_get(array, 1);
 	RATS_VERIFIER_CBOR_ASSERT(cbor_isa_bytestring(array_1));
 	RATS_VERIFIER_CBOR_ASSERT(cbor_bytestring_is_definite(array_1));
@@ -517,6 +572,8 @@ err:
 	return ret;
 }
 
+// 从endorsements_buffer中解析出endorsements
+// endorsements_buffer的内容是<tag1>([h'<VERSION>', h'<TCB_INFO>', h'<TCB_ISSUER_CHAIN>', h'<CRL_PCK_CERT>', h'<CRL_PCK_PROC_CA>', h'<CRL_ISSUER_CHAIN_PCK_CERT>', h'<QE_ID_INFO>', h'<QE_ID_ISSUER_CHAIN>', h'<CREATION_DATETIME>'])
 enclave_verifier_err_t
 dice_parse_endorsements_buffer_with_tag(const char *type, const uint8_t *endorsements_buffer,
 					size_t endorsements_buffer_size,
@@ -641,6 +698,8 @@ err:
 	return ret;
 }
 
+// 由于pubkey-hash-value的cbor格式是：pubkey-hash-value: [ hash-alg-id, hash-value ]
+// 这里需要对pubkey-hash-value的cbor格式进行解析，返回值是pubkey_hash_algo和pubkey_hash
 enclave_verifier_err_t dice_parse_pubkey_hash_value_buffer(const uint8_t *pubkey_hash_value_buffer,
 							   size_t pubkey_hash_value_buffer_size,
 							   hash_algo_t *pubkey_hash_algo_out,
@@ -723,6 +782,9 @@ err:
  *     custom claims included only. The caller should manage its memory.
  * custom_claims_length_out: The length of claims list.
  *  */
+// 解析claims_buffer，claims_buffer中包括[ key: pubkey-hash, value: pubkey-hash-value ]和其他用户自定义的claims值
+// 其中pubkey-hash-value的格式是：pubkey-hash-value: [ hash-alg-id, hash-value ]
+// 将user-defined的custom_claims、pubkey_hash_algo和pubkey_hash返回
 enclave_verifier_err_t
 dice_parse_claims_buffer(const uint8_t *claims_buffer, size_t claims_buffer_size,
 			 hash_algo_t *pubkey_hash_algo_out, uint8_t *pubkey_hash_out,
@@ -779,6 +841,8 @@ dice_parse_claims_buffer(const uint8_t *claims_buffer, size_t claims_buffer_size
 			    !strncmp((char *)key_handle, CLAIM_PUBLIC_KEY_HASH, key_length)) {
 				found_pubkey_hash = true;
 
+				// 由于pubkey-hash-value的cbor格式是：pubkey-hash-value: [ hash-alg-id, hash-value ]
+				// 这里需要对pubkey-hash-value的cbor格式进行解析，返回值是pubkey_hash_algo和pubkey_hash
 				ret = dice_parse_pubkey_hash_value_buffer(value_handle,
 									  value_length,
 									  pubkey_hash_algo_out,

@@ -19,6 +19,7 @@
 #endif
 // clang-format on
 
+// 核心层的rtls_core_context_t结构体，包括了用户选择的配置信息、用户设置的回调函数、attester、verifier、tls_wrapper和crypto_wrapper实例指针
 typedef struct rtls_core_context_t {
 	rats_tls_conf_t config;
 	unsigned long flags;

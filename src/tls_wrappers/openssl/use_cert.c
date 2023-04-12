@@ -8,14 +8,18 @@
 #include <rats-tls/tls_wrapper.h>
 #include "openssl.h"
 
+// 将X.509证书加载至SSL上下文中，以供SSL/TLS连接使用。
 tls_wrapper_err_t openssl_tls_use_cert(tls_wrapper_ctx_t *ctx, rats_tls_cert_info_t *cert_info)
 {
 	RTLS_DEBUG("ctx %p, cert_info %p\n", ctx, cert_info);
 
 	if (!ctx || !cert_info)
 		return -TLS_WRAPPER_ERR_INVALID;
-
+    
+	// 将tls_wrapper_ctx_t结构体中tls_private类型的指针赋值给openssl_ctx_t类型的指针
 	openssl_ctx_t *ssl_ctx = (openssl_ctx_t *)ctx->tls_private;
+
+	// 将X.509证书加载至SSL上下文中，以供SSL/TLS连接使用。
 	int ret = SSL_CTX_use_certificate_ASN1(ssl_ctx->sctx, cert_info->cert_len,
 					       cert_info->cert_buf);
 	if (ret != SSL_SUCCESS) {

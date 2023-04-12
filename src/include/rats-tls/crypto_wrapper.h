@@ -25,6 +25,7 @@
 
 typedef struct crypto_wrapper_ctx crypto_wrapper_ctx_t;
 
+// 一个用来存储crypto_wrapper选项的结构体，用来存放crypto_wrapper版本、类型、优先级，以及各种crypto_wrapper相关函数的指针（比如init、gen_privkey、gen_cert等函数）
 typedef struct {
 	uint8_t api_version;
 	unsigned long flags;
@@ -45,6 +46,8 @@ typedef struct {
 	crypto_wrapper_err_t (*cleanup)(crypto_wrapper_ctx_t *ctx);
 } crypto_wrapper_opts_t;
 
+
+// 一个用来存储crypto_wrapper信息的结构体，其中包括crypto_wrapper选项的结构体、生成私钥的结构体crypto_private等信息
 struct crypto_wrapper_ctx {
 	crypto_wrapper_opts_t *opts;
 	void *crypto_private;
@@ -54,6 +57,7 @@ struct crypto_wrapper_ctx {
 	void *handle;
 };
 
+// 注册crypto_wrapper实例
 extern crypto_wrapper_err_t crypto_wrapper_register(const crypto_wrapper_opts_t *);
 
 #endif /* _ENCLAVE_CRYPTO_WRAPPER_H */

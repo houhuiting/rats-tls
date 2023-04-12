@@ -55,6 +55,7 @@ int generate_quote(int sgx_fd, sgxioc_gen_dcap_quote_arg_t *gen_quote_arg)
 #endif
 // clang-format on
 
+// 收集evidence
 enclave_attester_err_t sgx_ecdsa_collect_evidence(enclave_attester_ctx_t *ctx,
 						  attestation_evidence_t *evidence,
 						  rats_tls_cert_algo_t algo, uint8_t *hash,
@@ -62,6 +63,7 @@ enclave_attester_err_t sgx_ecdsa_collect_evidence(enclave_attester_ctx_t *ctx,
 {
 	RTLS_DEBUG("ctx %p, evidence %p, algo %d, hash %p\n", ctx, evidence, algo, hash);
 
+	// 初始化sgx report
 	sgx_report_data_t report_data;
 	if (sizeof(report_data.d) < hash_len) {
 		RTLS_ERR("hash_len(%zu) shall be smaller than user-data filed size (%zu)\n",
@@ -69,6 +71,7 @@ enclave_attester_err_t sgx_ecdsa_collect_evidence(enclave_attester_ctx_t *ctx,
 		return ENCLAVE_ATTESTER_ERR_INVALID;
 	}
 	memset(&report_data, 0, sizeof(sgx_report_data_t));
+	// 把claims_buffer的hash写入report_data.d
 	memcpy(report_data.d, hash, hash_len);
 
 #ifdef OCCLUM

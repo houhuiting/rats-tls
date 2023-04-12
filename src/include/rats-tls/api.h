@@ -30,6 +30,7 @@ typedef enum {
 	RATS_TLS_LOG_LEVEL_DEFAULT = RATS_TLS_LOG_LEVEL_ERROR
 } rats_tls_log_level_t;
 
+// 定义一个rtls_core_context_t类型的指针rats_tls_handle
 typedef struct rtls_core_context_t *rats_tls_handle;
 
 typedef enum {
@@ -39,6 +40,7 @@ typedef enum {
 	RATS_TLS_CERT_ALGO_DEFAULT,
 } rats_tls_cert_algo_t;
 
+// rats_tls配置信息，包括用户选择的tls、attester、verifier和crypto参数，log模式、证书加密算法、claim信息等
 typedef struct {
 	unsigned int api_version;
 	unsigned long flags;

@@ -17,7 +17,7 @@
 #include <rats-tls/log.h>
 #include <rats-tls/claim.h>
 
-#define DEFAULT_PORT 1234
+#define DEFAULT_PORT 123456
 #define DEFAULT_IP   "127.0.0.1"
 
 // clang-format off
@@ -122,6 +122,7 @@ int rats_tls_client_startup(rats_tls_log_level_t log_level, char *attester_type,
 	 * Sets the socket to be stream based (TCP),
 	 * 0 means choose the default protocol.
 	 */
+	// 创建一个新的使用IPv4协议和TCP协议的套接字
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
 		RTLS_ERR("failed to call socket()\n");
@@ -134,30 +135,35 @@ int rats_tls_client_startup(rats_tls_log_level_t log_level, char *attester_type,
 	s_addr.sin_port = htons(port);
 
 	/* Get the server IPv4 address from the command line call */
+	// 从命令行调用中获取服务器的IPv4地址。
 	if (inet_pton(AF_INET, ip, &s_addr.sin_addr) != 1) {
 		RTLS_ERR("invalid server address\n");
 		return -1;
 	}
 
 	/* Connect to the server */
+	// 与另一个套接字建立连接
 	if (connect(sockfd, (struct sockaddr *)&s_addr, sizeof(s_addr)) == -1) {
 		RTLS_ERR("failed to call connect()\n");
 		return -1;
 	}
 
 	rats_tls_handle handle;
+	// 调用init函数，填充claim、选择四种实例，并创建证书
 	rats_tls_err_t ret = rats_tls_init(&conf, &handle);
 	if (ret != RATS_TLS_ERR_NONE) {
 		RTLS_ERR("Failed to initialize rats tls %#x\n", ret);
 		return -1;
 	}
 
+	// Rats TLS应用调用Rats TLS API rats_tls_set_verification_callback() 设置用户自定义的回调函数
 	ret = rats_tls_set_verification_callback(&handle, user_callback);
 	if (ret != RATS_TLS_ERR_NONE) {
 		RTLS_ERR("Failed to set verification callback %#x\n", ret);
 		return -1;
 	}
 
+	// Rats TLS应用调用Rats TLS API rats_tls_negotiate()启动Rats TLS协商
 	ret = rats_tls_negotiate(handle, sockfd);
 	if (ret != RATS_TLS_ERR_NONE) {
 		RTLS_ERR("Failed to negotiate %#x\n", ret);
@@ -171,12 +177,14 @@ int rats_tls_client_startup(rats_tls_log_level_t log_level, char *attester_type,
 		msg = "Hello and welcome to RATS-TLS!\n";
 
 	size_t len = strlen(msg);
+	// 当Rats-TLS 可信信道建立成功之后，就可以通过Rats TLS API rats_tls_transmit()来发送数据
 	ret = rats_tls_transmit(handle, (void *)msg, &len);
 	if (ret != RATS_TLS_ERR_NONE || len != strlen(msg)) {
 		RTLS_ERR("Failed to transmit %#x\n", ret);
 		goto err;
 	}
 
+	// 当Rats-TLS 可信信道建立成功之后，就可以通过Rats TLS API rats_tls_receive()来接收数据
 	char buf[256];
 	len = sizeof(buf);
 	ret = rats_tls_receive(handle, buf, &len);

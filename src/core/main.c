@@ -21,8 +21,10 @@
 // clang-format on
 
 /* The global configurations present by /opt/rats-tls/config.toml */
+// 一个全局的rtls_core_context_t参数global_core_context
 rtls_core_context_t global_core_context;
 /* The global log level used by log.h */
+// 全局参数global_log_level，用于表示使用什么模式输出log
 rats_tls_log_level_t global_log_level = RATS_TLS_LOG_LEVEL_DEFAULT;
 
 #ifdef SGX
@@ -65,6 +67,7 @@ void __attribute__((constructor)) librats_tls_init(void)
 	/* TODO: load and parse the global configuration file */
 
 #ifdef SGX
+    // 如果是sgx模式，就要加载librats_tls.a
 	for (uint8_t i = 0; i < INSTANCE_NUM; i++) {
 		rats_tls_err_t err = rtls_instance_init(enclave_instance_name[i], NULL, NULL);
 		if (err != RATS_TLS_ERR_NONE) {
@@ -75,6 +78,7 @@ void __attribute__((constructor)) librats_tls_init(void)
 	}
 #else
 	/* Load all crypto wrapper instances */
+	// 加载在/usr/local/lib/rats-tls/crypto-wrappers目录下的所有Crypto Wrapper实例
 	rats_tls_err_t err = rtls_crypto_wrapper_load_all();
 	if (err != RATS_TLS_ERR_NONE) {
 		RTLS_FATAL("failed to load any crypto wrapper %#x\n", err);
@@ -82,12 +86,14 @@ void __attribute__((constructor)) librats_tls_init(void)
 	}
 
 	/* Load all enclave attester instances */
+	// 加载在/usr/local/lib/rats-tls/attester目录下的所有Enclave Attester 实例
 	err = rtls_enclave_attester_load_all();
 	if (err != RATS_TLS_ERR_NONE) {
 		RTLS_FATAL("failed to load any enclave attester %#x\n", err);
 		rtls_exit();
 	}
 	/* Load all enclave verifier instances */
+	// 加载在/usr/local/lib/rats-tls/verifier目录下的所有Enclave Verifier 实例
 	err = rtls_enclave_verifier_load_all();
 	if (err != RATS_TLS_ERR_NONE) {
 		RTLS_FATAL("failed to load any enclave verifier %#x\n", err);
@@ -95,6 +101,7 @@ void __attribute__((constructor)) librats_tls_init(void)
 	}
 
 	/* Load all tls wrapper instances */
+	// 加载在/usr/local/lib/rats-tls/tls-wrapper目录下的所有TLS Wrapper实例
 	err = rtls_tls_wrapper_load_all();
 	if (err != RATS_TLS_ERR_NONE) {
 		RTLS_FATAL("failed to load any tls wrapper %#x\n", err);

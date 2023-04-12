@@ -10,6 +10,7 @@
 #include "internal/core.h"
 #include "internal/crypto_wrapper.h"
 
+// 根据不同的crypto_wrapper实例，设置了不同的init方法。此处调用被选中实例的init方法（初始化私钥）
 static rats_tls_err_t init_crypto_wrapper(crypto_wrapper_ctx_t *crypto_ctx)
 {
 	crypto_wrapper_err_t err = crypto_ctx->opts->init(crypto_ctx);
@@ -22,11 +23,14 @@ static rats_tls_err_t init_crypto_wrapper(crypto_wrapper_ctx_t *crypto_ctx)
 	return RATS_TLS_ERR_NONE;
 }
 
+// 根据crypto_wrapper名字，选择crypto_wrapper实例
 rats_tls_err_t rtls_crypto_wrapper_select(rtls_core_context_t *ctx, const char *name)
 {
 	RTLS_DEBUG("selecting the crypto wrapper '%s' ...\n", name);
 
 	crypto_wrapper_ctx_t *crypto_ctx = NULL;
+	// crypto_wrappers_ctx数组中存放了pre_init成功的crypto_wrapper实例的crypto_wrapper_ctx_t结构体
+	// 遍历一遍crypto_wrappers_ctx数组，将所选择的crypto_wrapper实例的crypto_wrapper_ctx_t参数放到crypto_ctx中
 	for (unsigned int i = 0; i < registerd_crypto_wrapper_nums; ++i) {
 		if (name && strcmp(name, crypto_wrappers_ctx[i]->opts->name))
 			continue;
@@ -44,6 +48,7 @@ rats_tls_err_t rtls_crypto_wrapper_select(rtls_core_context_t *ctx, const char *
 		crypto_ctx->log_level = ctx->config.log_level;
 		crypto_ctx->cert_algo = ctx->config.cert_algo;
 
+		// 根据不同的crypto_wrapper实例，设置了不同的init方法。此处调用被选中实例的init方法（初始化私钥）
 		if (init_crypto_wrapper(crypto_ctx) == RATS_TLS_ERR_NONE)
 			break;
 
@@ -60,6 +65,7 @@ rats_tls_err_t rtls_crypto_wrapper_select(rtls_core_context_t *ctx, const char *
 		return -RATS_TLS_ERR_INIT;
 	}
 
+	// 将被选中crypto_wrapper实例的crypto_wrapper_ctx_t参数crypto_ctx，放入核心层的rtls_core_context_t结构体参数ctx中
 	ctx->crypto_wrapper = crypto_ctx;
 	ctx->flags |= RATS_TLS_CTX_FLAGS_CRYPTO_INITIALIZED;
 

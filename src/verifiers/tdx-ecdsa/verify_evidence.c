@@ -120,6 +120,7 @@ errret:
 	return err;
 }
 
+// Enclave Verifier实例verify_evidence方法验证证书
 enclave_verifier_err_t tdx_ecdsa_verify_evidence(enclave_verifier_ctx_t *ctx,
 						 attestation_evidence_t *evidence, uint8_t *hash,
 						 __attribute__((unused)) uint32_t hash_len,

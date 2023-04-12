@@ -8,6 +8,7 @@
 #include <rats-tls/tls_wrapper.h>
 #include "openssl.h"
 
+// 把私钥数据加载到SSL上下文中
 tls_wrapper_err_t openssl_tls_use_privkey(tls_wrapper_ctx_t *ctx, rats_tls_cert_algo_t algo,
 					  void *privkey_buf, size_t privkey_len)
 {
@@ -16,6 +17,7 @@ tls_wrapper_err_t openssl_tls_use_privkey(tls_wrapper_ctx_t *ctx, rats_tls_cert_
 	if (!ctx || !privkey_buf || !privkey_len)
 		return -TLS_WRAPPER_ERR_INVALID;
 
+	// 将tls_wrapper_ctx_t结构体中tls_private类型的指针赋值给openssl_ctx_t类型的指针
 	openssl_ctx_t *ssl_ctx = (openssl_ctx_t *)ctx->tls_private;
 
 	int EPKEY;
@@ -28,6 +30,7 @@ tls_wrapper_err_t openssl_tls_use_privkey(tls_wrapper_ctx_t *ctx, rats_tls_cert_
 		return -CRYPTO_WRAPPER_ERR_UNSUPPORTED_ALGO;
 	}
 
+	// 从ASN.1编码的私钥中加载私钥数据到SSL上下文（ssl_ctx->sctx）中
 	int ret = SSL_CTX_use_PrivateKey_ASN1(EPKEY, ssl_ctx->sctx, privkey_buf, (long)privkey_len);
 
 	if (ret != SSL_SUCCESS) {

@@ -21,6 +21,7 @@
 #include "sgx_quote_3.h"
 // clang-format on
 
+// 验证evidence和endorsements
 tls_wrapper_err_t
 tls_wrapper_verify_evidence(tls_wrapper_ctx_t *tls_ctx, attestation_evidence_t *evidence,
 			    uint8_t *hash, uint32_t hash_len,
@@ -34,6 +35,7 @@ tls_wrapper_verify_evidence(tls_wrapper_ctx_t *tls_ctx, attestation_evidence_t *
 	    !tls_ctx->rtls_handle->verifier->opts->verify_evidence)
 		return -TLS_WRAPPER_ERR_INVALID;
 
+	// 做一个判断，看evidence类型和verifier类型是否一致，如果不一致，报错，并重新选择verifier
 	if (strcmp(tls_ctx->rtls_handle->verifier->opts->type, evidence->type) &&
 	    !(tls_ctx->rtls_handle->flags & RATS_TLS_CONF_FLAGS_VERIFIER_ENFORCED)) {
 		RTLS_WARN("type doesn't match between verifier '%s' and evidence '%s'\n",
@@ -48,6 +50,7 @@ tls_wrapper_verify_evidence(tls_wrapper_ctx_t *tls_ctx, attestation_evidence_t *
 		}
 	}
 
+	// 调用Enclave Verifier实例verify_evidence方法验证evidence和endorsements
 	enclave_verifier_err_t err = tls_ctx->rtls_handle->verifier->opts->verify_evidence(
 		tls_ctx->rtls_handle->verifier, evidence, hash, hash_len, endorsements);
 	if (err != ENCLAVE_VERIFIER_ERR_NONE) {
@@ -58,6 +61,7 @@ tls_wrapper_verify_evidence(tls_wrapper_ctx_t *tls_ctx, attestation_evidence_t *
 	return TLS_WRAPPER_ERR_NONE;
 }
 
+// 验证证书
 tls_wrapper_err_t tls_wrapper_verify_certificate_extension(
 	tls_wrapper_ctx_t *tls_ctx,
 	const uint8_t *pubkey_buffer /* in SubjectPublicKeyInfo format */,
@@ -85,11 +89,15 @@ tls_wrapper_err_t tls_wrapper_verify_certificate_extension(
 		return -TLS_WRAPPER_ERR_INVALID;
 
 	/* Get evidence struct and claims_buffer from evidence_buffer. */
+	// 从 evidence_buffer 中获取 evidence struct 和 claims_buffer。
+	// evidence_buffer的内容是evidence_buffer: <tag1>([ evidence->ecdsa.quote(customs-buffer-hash), claims-buffer ])
 	if (!evidence_buffer) {
 		/* evidence_buffer is empty, which means that the other party is using a non-dice certificate or is using a nullattester */
+		// evidence_buffer为空，表示对方使用的是非dice证书或者使用的是nullattester
 		RTLS_WARN("there is no evidence buffer in peer's certificate.\n");
 		memset(&evidence, 0, sizeof(attestation_evidence_t));
 	} else {
+		// 从 evidence_buffer 中获取 evidence struct 和 claims_buffer。
 		enclave_verifier_err_t d_ret = dice_parse_evidence_buffer_with_tag(
 			evidence_buffer, evidence_buffer_size, &evidence, &claims_buffer,
 			&claims_buffer_size);
@@ -103,12 +111,14 @@ tls_wrapper_err_t tls_wrapper_verify_certificate_extension(
 	RTLS_DEBUG("evidence->type: '%s'\n", evidence.type);
 
 	/* Get endorsements (optional) from endorsements_buffer */
+	// 从endorsements_buffer中解析出endorsements
 	attestation_endorsement_t endorsements;
 	memset(&endorsements, 0, sizeof(attestation_endorsement_t));
 
 	bool has_endorsements = endorsements_buffer && endorsements_buffer_size;
 	RTLS_DEBUG("has_endorsements: %s\n", has_endorsements ? "true" : "false");
 	if (has_endorsements) {
+		// 从endorsements_buffer中解析出endorsements
 		enclave_verifier_err_t d_ret = dice_parse_endorsements_buffer_with_tag(
 			evidence.type, endorsements_buffer, endorsements_buffer_size,
 			&endorsements);
@@ -124,6 +134,9 @@ tls_wrapper_err_t tls_wrapper_verify_certificate_extension(
 	/* Prepare hash value as evidence userdata to be verified.
 	 * The hash value in evidence user-data field shall be the SHA256 hash of the `claims-buffer` byte string.
 	 */
+	// 由于存放在evidence中的hash值是customs-buffer-hash，接下来就要将customs-buffer-hash获取出来
+	// 之前已经获取到了customs-buffer，那就和产生证书时一样，调用crypto_wrapper实例的gen_hash函数，生成hash就行
+	// 这个hash不能从evidence中提取，因为后期要比对evidence中的hash和customs-buffer产生的hash是否一致，从而判断通信中有没有出错
 	RTLS_DEBUG("check evidence userdata field with sha256 of claims_buffer\n");
 	uint8_t claims_buffer_hash[SHA256_HASH_SIZE];
 	size_t claims_buffer_hash_len = sizeof(claims_buffer_hash);
@@ -135,6 +148,7 @@ tls_wrapper_err_t tls_wrapper_verify_certificate_extension(
 			"set claims buffer hash value to 0, since there is no evidence buffer in peer's certificate.\n");
 		memset(claims_buffer_hash, 0, claims_buffer_hash_len);
 	} else {
+		// 调用crypto_wrapper实例的gen_hash函数生成
 		crypto_wrapper_err_t c_err = tls_ctx->rtls_handle->crypto_wrapper->opts->gen_hash(
 			tls_ctx->rtls_handle->crypto_wrapper, HASH_ALGO_SHA256, claims_buffer,
 			claims_buffer_size, claims_buffer_hash);
@@ -156,6 +170,7 @@ tls_wrapper_err_t tls_wrapper_verify_certificate_extension(
 	}
 
 	/* Verify evidence and userdata */
+	// 验证evidence和endorsements
 	ret = tls_wrapper_verify_evidence(tls_ctx, &evidence, claims_buffer_hash,
 					  claims_buffer_hash_len,
 					  has_endorsements ? &endorsements : NULL);
@@ -167,9 +182,13 @@ tls_wrapper_err_t tls_wrapper_verify_certificate_extension(
 	}
 
 	/* Parse and verify claims buffer */
+	// 解析claims_buffer，claims_buffer中包括[ key: pubkey-hash, value: pubkey-hash-value ]和其他用户自定义的claims值
+    // 其中pubkey-hash-value的格式是：pubkey-hash-value: [ hash-alg-id, hash-value ]
+    // 将user-defined的custom_claims、pubkey_hash_algo和pubkey_hash返回
 	if (claims_buffer) {
 		hash_algo_t pubkey_hash_algo = HASH_ALGO_RESERVED;
 		uint8_t pubkey_hash[MAX_HASH_SIZE];
+		// 调用核心层的dice_parse_claims_buffer()函数解析cbor格式的claims_buffer，从中获取pubkey_hash_algo、pubkey_hash和user-defined的custom_claims。
 		enclave_verifier_err_t d_ret = dice_parse_claims_buffer(
 			claims_buffer, claims_buffer_size, &pubkey_hash_algo, pubkey_hash,
 			&custom_claims, &custom_claims_length);
@@ -189,10 +208,12 @@ tls_wrapper_err_t tls_wrapper_verify_certificate_extension(
 		}
 
 		/* Verify pubkey_hash */
+		// 验证pubkey_hash是否正确
 		RTLS_DEBUG("check pubkey hash. pubkey_hash: %p, pubkey_hash_algo: %d\n",
 			   pubkey_hash, pubkey_hash_algo);
 
 		uint8_t calculated_pubkey_hash[MAX_HASH_SIZE];
+		// 调用crypto_wrapper实例中的gen_hash()生成calculated_pubkey_hash
 		crypto_wrapper_err_t c_err = tls_ctx->rtls_handle->crypto_wrapper->opts->gen_hash(
 			tls_ctx->rtls_handle->crypto_wrapper, pubkey_hash_algo, pubkey_buffer,
 			pubkey_buffer_size, calculated_pubkey_hash);
@@ -215,6 +236,7 @@ tls_wrapper_err_t tls_wrapper_verify_certificate_extension(
 			   calculated_pubkey_hash[4], calculated_pubkey_hash[5],
 			   calculated_pubkey_hash[6], calculated_pubkey_hash[7]);
 
+		// pubkey_hash和使用从证书中提取出来的pubkey_buffer计算出的calculated_pubkey_hash比较一下，检查合法性
 		if (memcmp(pubkey_hash, calculated_pubkey_hash, hash_size)) {
 			RTLS_ERR("unmatched pubkey hash value in claims buffer\n");
 			ret = TLS_WRAPPER_ERR_INVALID;
@@ -223,6 +245,8 @@ tls_wrapper_err_t tls_wrapper_verify_certificate_extension(
 	}
 
 	/* Verify evidence struct via user_callback */
+	// 使用用户自定义的回调函数来验证evidence
+	// 在本代码的smaple示例中，用户自定义的回调函数仅为输出custom_claims
 	rtls_evidence_t ev;
 	memset(&ev, 0, sizeof(ev));
 	ev.custom_claims = custom_claims;
@@ -279,6 +303,7 @@ tls_wrapper_err_t tls_wrapper_verify_certificate_extension(
 		ev.quote_size = sizeof(*report);
 	}
 
+	// 运行用户自定义的回调函数
 	if (tls_ctx->rtls_handle->user_callback) {
 		int rc = tls_ctx->rtls_handle->user_callback(&ev);
 		if (!rc) {

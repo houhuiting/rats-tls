@@ -300,6 +300,7 @@ errret:
 }
 #endif
 
+// Enclave Verifier实例verify_evidence方法验证evidence和endorsements
 enclave_verifier_err_t
 sgx_ecdsa_verify_evidence(enclave_verifier_ctx_t *ctx, attestation_evidence_t *evidence,
 			  uint8_t *hash, __attribute__((unused)) uint32_t hash_len,
@@ -316,6 +317,7 @@ sgx_ecdsa_verify_evidence(enclave_verifier_ctx_t *ctx, attestation_evidence_t *e
 		   pquote->signature_data_len);
 
 	/* First verify the hash value */
+	// 比对evidence中的hash（pquote->report_body.report_data.d）和customs-buffer产生的hash是否一致
 	if (memcmp(hash, pquote->report_body.report_data.d, hash_len) != 0) {
 		RTLS_ERR("unmatched hash value in evidence.\n");
 		return -ENCLAVE_VERIFIER_ERR_INVALID;

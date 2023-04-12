@@ -8,6 +8,7 @@
 #include <rats-tls/log.h>
 #include "internal/core.h"
 
+// negotiate api ,handle是初始化得到的rtls_core_context_t参数ctx的拷贝，fd 是
 rats_tls_err_t rats_tls_negotiate(rats_tls_handle handle, int fd)
 {
 	rtls_core_context_t *ctx = (rtls_core_context_t *)handle;
@@ -18,6 +19,7 @@ rats_tls_err_t rats_tls_negotiate(rats_tls_handle handle, int fd)
 	    !ctx->tls_wrapper->opts->negotiate || fd < 0)
 		return -RATS_TLS_ERR_INVALID;
 
+	// 调用TLS Wrapper实例的negotiate方法
 	tls_wrapper_err_t t_err = ctx->tls_wrapper->opts->negotiate(ctx->tls_wrapper, fd);
 	if (t_err != TLS_WRAPPER_ERR_NONE)
 		return t_err;
