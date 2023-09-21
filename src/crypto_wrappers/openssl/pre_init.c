@@ -7,9 +7,9 @@
 #include <rats-tls/log.h>
 #include <rats-tls/crypto_wrapper.h>
 
-crypto_wrapper_err_t openssl_pre_init(void)
-{
-	RTLS_DEBUG("called\n");
+// crypto_wrapper_err_t openssl_pre_init(void)
+// {
+// 	RTLS_DEBUG("called\n");
 
-	return CRYPTO_WRAPPER_ERR_NONE;
-}
+// 	return CRYPTO_WRAPPER_ERR_NONE;
+// }

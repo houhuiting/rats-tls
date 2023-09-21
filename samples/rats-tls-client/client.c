@@ -16,8 +16,10 @@
 #include <rats-tls/api.h>
 #include <rats-tls/log.h>
 #include <rats-tls/claim.h>
+#include <librats/api.h>
+#include <librats/log.h>
 
-#define DEFAULT_PORT 1234
+#define DEFAULT_PORT 55555
 #define DEFAULT_IP   "127.0.0.1"
 
 // clang-format off
@@ -85,18 +87,71 @@ int rats_tls_client_startup(rats_tls_log_level_t log_level, char *attester_type,
 
 #ifndef SGX
 
-int user_callback(void *args)
+int user_callback(claim_t *claims, size_t claims_size, void *args_in)
 {
-	rtls_evidence_t *ev = (rtls_evidence_t *)args;
+	// rtls_evidence_t *ev = (rtls_evidence_t *)args;
 
-	printf("verify_callback called, claims %p, claims_size %zu, args %p\n", ev->custom_claims,
-	       ev->custom_claims_length, args);
-	for (size_t i = 0; i < ev->custom_claims_length; ++i) {
-		printf("custom_claims[%zu] -> name: '%s' value_size: %zu value: '%.*s'\n", i,
-		       ev->custom_claims[i].name, ev->custom_claims[i].value_size,
-		       (int)ev->custom_claims[i].value_size, ev->custom_claims[i].value);
+	// printf("verify_callback called, claims %p, claims_size %zu, args %p\n", ev->custom_claims,
+	//        ev->custom_claims_length, args);
+	// for (size_t i = 0; i < ev->custom_claims_length; ++i) {
+	// 	printf("custom_claims[%zu] -> name: '%s' value_size: %zu value: '%.*s'\n", i,
+	// 	       ev->custom_claims[i].name, ev->custom_claims[i].value_size,
+	// 	       (int)ev->custom_claims[i].value_size, ev->custom_claims[i].value);
+	// }
+	// return 1;
+    
+	int ret = 0;
+	printf("----------------------------------------\n");
+	printf("verify_callback called, claims %p, claims_size %zu, args %p\n", claims, claims_size,
+	       args_in);
+	for (size_t i = 0; i < claims_size; ++i) {
+		printf("claims[%zu] -> name: '%s' value_size: %zu value: '%.*s'\n", i,
+		       claims[i].name, claims[i].value_size, (int)claims[i].value_size,
+		       claims[i].value);
 	}
-	return 1;
+
+	/* Let's check all custom claims exits and unchanged */
+	typedef struct {
+		const claim_t *custom_claims;
+		size_t custom_claims_size;
+	} args_t;
+	args_t *args = (args_t *)args_in;
+
+	printf("checking for all %zu user-defined custom claims\n", args->custom_claims_size);
+
+	for (size_t i = 0; i < args->custom_claims_size; ++i) {
+		const claim_t *claim = &args->custom_claims[i];
+		bool found = false;
+		for (size_t j = 0; j < claims_size; ++j) {
+			if (!strcmp(claim->name, claims[j].name)) {
+				found = true;
+				if (claim->value_size != claims[j].value_size) {
+					printf("different claim detected -> name: '%s' expected value_size: %zu got: %zu\n",
+					       claim->name, claim->value_size,
+					       claims[j].value_size);
+					ret = 1;
+					break;
+				}
+
+				if (memcmp(claim->value, claims[j].value, claim->value_size)) {
+					printf("different claim detected -> name: '%s' value_size: %zu expected value: '%.*s' got: '%.*s'\n",
+					       claim->name, claim->value_size,
+					       (int)claim->value_size, claim->value,
+					       (int)claim->value_size, claims[j].value);
+					ret = 1;
+					break;
+				}
+				break;
+			}
+		}
+		if (!found) {
+			printf("different claim detected -> name: '%s' not found\n", claim->name);
+			ret = 1;
+		}
+	}
+	printf("verify_callback check result:\t%s\n", ret == 0 ? "SUCCESS" : "FAILED");
+	printf("----------------------------------------\n");
+	return ret;
 }
 
 int rats_tls_client_startup(rats_tls_log_level_t log_level, char *attester_type,
@@ -124,7 +179,7 @@ int rats_tls_client_startup(rats_tls_log_level_t log_level, char *attester_type,
 	 */
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
-		RTLS_ERR("failed to call socket()\n");
+		// RTLS_ERR("failed to call socket()\n");
 		return -1;
 	}
 
@@ -135,26 +190,26 @@ int rats_tls_client_startup(rats_tls_log_level_t log_level, char *attester_type,
 
 	/* Get the server IPv4 address from the command line call */
 	if (inet_pton(AF_INET, ip, &s_addr.sin_addr) != 1) {
-		RTLS_ERR("invalid server address\n");
+		// RTLS_ERR("invalid server address\n");
 		return -1;
 	}
 
 	/* Connect to the server */
 	if (connect(sockfd, (struct sockaddr *)&s_addr, sizeof(s_addr)) == -1) {
-		RTLS_ERR("failed to call connect()\n");
+		// RTLS_ERR("failed to call connect()\n");
 		return -1;
 	}
 
 	rats_tls_handle handle;
 	rats_tls_err_t ret = rats_tls_init(&conf, &handle);
 	if (ret != RATS_TLS_ERR_NONE) {
-		RTLS_ERR("Failed to initialize rats tls %#x\n", ret);
+		// RTLS_ERR("Failed to initialize rats tls %#x\n", ret);
 		return -1;
 	}
 
 	ret = rats_tls_set_verification_callback(&handle, user_callback);
 	if (ret != RATS_TLS_ERR_NONE) {
-		RTLS_ERR("Failed to set verification callback %#x\n", ret);
+		// RTLS_ERR("Failed to set verification callback %#x\n", ret);
 		return -1;
 	}
 
@@ -272,7 +327,7 @@ int main(int argc, char **argv)
 	char *crypto_type = "";
 	bool mutual = false;
 	bool provide_endorsements = false;
-	rats_tls_log_level_t log_level = RATS_TLS_LOG_LEVEL_INFO;
+	rats_tls_log_level_t log_level = RATS_TLS_LOG_LEVEL_MAX;
 	char *srv_ip = DEFAULT_IP;
 	int port = DEFAULT_PORT;
 	bool debug_enclave = false;

@@ -5,7 +5,9 @@ project(attester_sev)
 set(INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/../../include
                  ${CMAKE_CURRENT_SOURCE_DIR}/../../include/rats-tls
                  ${CMAKE_CURRENT_SOURCE_DIR}/../../include/internal
+                 /usr/local/include/librats
                  )
+                 
 include_directories(${INCLUDE_DIRS})
 
 # Set dependency library directory

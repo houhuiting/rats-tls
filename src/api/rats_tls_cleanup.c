@@ -21,9 +21,7 @@ rats_tls_err_t rats_tls_cleanup(rats_tls_handle handle)
 	RTLS_DEBUG("handle %p\n", ctx);
 
 	if (!handle || !handle->tls_wrapper || !handle->tls_wrapper->opts ||
-	    !handle->tls_wrapper->opts->cleanup || !handle->attester || !handle->attester->opts ||
-	    !handle->attester->opts->cleanup || !handle->verifier || !handle->verifier->opts ||
-	    !handle->verifier->opts->cleanup)
+	    !handle->tls_wrapper->opts->cleanup)
 		return -RATS_TLS_ERR_INVALID;
 
 	if (ctx->config.custom_claims) {
@@ -36,17 +34,17 @@ rats_tls_err_t rats_tls_cleanup(rats_tls_handle handle)
 		return err;
 	}
 
-	enclave_attester_err_t err_ea = handle->attester->opts->cleanup(handle->attester);
-	if (err_ea != ENCLAVE_ATTESTER_ERR_NONE) {
-		RTLS_DEBUG("failed to clean up attester %#x\n", err_ea);
-		return -RATS_TLS_ERR_INVALID;
-	}
+	// enclave_attester_err_t err_ea = handle->attester->opts->cleanup(handle->attester);
+	// if (err_ea != ENCLAVE_ATTESTER_ERR_NONE) {
+	// 	RTLS_DEBUG("failed to clean up attester %#x\n", err_ea);
+	// 	return -RATS_TLS_ERR_INVALID;
+	// }
 
-	enclave_verifier_err_t err_ev = handle->verifier->opts->cleanup(handle->verifier);
-	if (err_ev != ENCLAVE_VERIFIER_ERR_NONE) {
-		RTLS_DEBUG("failed to clean up verifier %#x\n", err_ev);
-		return -RATS_TLS_ERR_INVALID;
-	}
+	// enclave_verifier_err_t err_ev = handle->verifier->opts->cleanup(handle->verifier);
+	// if (err_ev != ENCLAVE_VERIFIER_ERR_NONE) {
+	// 	RTLS_DEBUG("failed to clean up verifier %#x\n", err_ev);
+	// 	return -RATS_TLS_ERR_INVALID;
+	// }
 
 	free(ctx);
 

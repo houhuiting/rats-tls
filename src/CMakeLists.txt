@@ -4,6 +4,8 @@ set(INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
                  ${CMAKE_CURRENT_SOURCE_DIR}/include/internal
                  /opt/intel/sgxsdk/include
                  /usr/include
+                 ${RATS_TLS_INSTALL_PATH}/include
+                 ${RATS_TLS_INSTALL_PATH}/include/librats
                  )
 if(SGX)
     list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include/edl
@@ -12,8 +14,6 @@ if(SGX)
 endif()
 
 # Add third party and instance directory
-add_subdirectory(attesters)
-add_subdirectory(verifiers)
 if(SGX)
     add_subdirectory(sgx)
 endif()
@@ -21,8 +21,8 @@ endif()
 # Add third party library required by crypto_wrappers and tls_wrappers
 if(SGX)
     list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/external/sgx-ssl/intel-sgx-ssl/src/intel-sgx-ssl/Linux/package/include)
+    list(APPEND INCLUDE_DIRS ${LIBRATS_ROOT})
 endif()
-add_subdirectory(crypto_wrappers)
 add_subdirectory(tls_wrappers)
 
 list(APPEND INCLUDE_DIRS ${LIBCBOR_INC_PATH})
@@ -44,27 +44,12 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/api/rats_tls_receive.c
     ${CMAKE_CURRENT_SOURCE_DIR}/api/rats_tls_transmit.c
     ${CMAKE_CURRENT_SOURCE_DIR}/api/rats_tls_callback.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/crypto_wrappers/api/crypto_wrapper_register.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/crypto_wrappers/internal/crypto_wrapper.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/crypto_wrappers/internal/rtls_crypto_wrapper_load_all.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/crypto_wrappers/internal/rtls_crypto_wrapper_load_single.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/crypto_wrappers/internal/rtls_crypto_wrapper_select.c
     ${CMAKE_CURRENT_SOURCE_DIR}/tls_wrappers/api/tls_wrapper_register.c
     ${CMAKE_CURRENT_SOURCE_DIR}/tls_wrappers/internal/rtls_tls_wrapper_load_all.c
     ${CMAKE_CURRENT_SOURCE_DIR}/tls_wrappers/internal/rtls_tls_wrapper_load_single.c
     ${CMAKE_CURRENT_SOURCE_DIR}/tls_wrappers/internal/rtls_tls_wrapper_select.c
     ${CMAKE_CURRENT_SOURCE_DIR}/tls_wrappers/internal/tls_wrapper.c
     ${CMAKE_CURRENT_SOURCE_DIR}/tls_wrappers/api/tls_wrapper_verify_certificate_extension.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/attesters/api/enclave_attester_register.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/attesters/internal/enclave_attester.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/attesters/internal/rtls_enclave_attester_load_all.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/attesters/internal/rtls_enclave_attester_load_single.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/attesters/internal/rtls_enclave_attester_select.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/verifiers/api/enclave_verifier_register.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/verifiers/internal/enclave_verifier.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/verifiers/internal/rtls_enclave_verifier_load_all.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/verifiers/internal/rtls_enclave_verifier_load_single.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/verifiers/internal/rtls_enclave_verifier_select.c
     )
 if(SGX)
     list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sgx/trust/rtls_syscalls.c
@@ -77,17 +62,10 @@ endif()
 if(SGX)
     set(DEPEND_TRUSTED_LIBS rtls_edl_t
                             intel-sgx-ssl
-                            crypto_wrapper_nullcrypto
-                            crypto_wrapper_openssl
                             tls_wrapper_nulltls
                             tls_wrapper_openssl
-                            attester_nullattester
-                            attester_sgx_ecdsa
-                            attester_sgx_la
-                            verifier_nullverifier
-                            verifier_sgx_ecdsa_qve
-                            verifier_sgx_la
                             libcbor
+                            librats
                             )
 endif()
 

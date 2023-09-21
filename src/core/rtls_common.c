@@ -82,53 +82,14 @@ rats_tls_err_t rtls_instance_init(const char *name, __attribute__((unused)) cons
 				  __attribute__((unused)) void **handle)
 {
 	rats_tls_err_t err;
-
-	if (!strcmp(name, "nullcrypto")) {
-		libcrypto_wrapper_nullcrypto_init();
-		err = rtls_enclave_crypto_post_init(name, NULL);
-		if (err != RATS_TLS_ERR_NONE)
-			return err;
-	} else if (!strcmp(name, "nullattester")) {
-		libattester_null_init();
-		err = rtls_enclave_attester_post_init(name, NULL);
-		if (err != RATS_TLS_ERR_NONE)
-			return err;
-	} else if (!strcmp(name, "nullverifier")) {
-		libverifier_null_init();
-		err = rtls_enclave_verifier_post_init(name, NULL);
-		if (err != RATS_TLS_ERR_NONE)
-			return err;
-	} else if (!strcmp(name, "sgx_ecdsa")) {
-		libattester_sgx_ecdsa_init();
-		err = rtls_enclave_attester_post_init(name, NULL);
-		if (err != RATS_TLS_ERR_NONE)
-			return err;
-	} else if (!strcmp(name, "sgx_ecdsa_qve")) {
-		libverifier_sgx_ecdsa_qve_init();
-		err = rtls_enclave_verifier_post_init(name, NULL);
-		if (err != RATS_TLS_ERR_NONE)
-			return err;
-	} else if (!strcmp(name, "sgx_la")) {
-		libattester_sgx_la_init();
-		libverifier_sgx_la_init();
-		err = rtls_enclave_attester_post_init(name, NULL);
-		if (err != RATS_TLS_ERR_NONE)
-			return err;
-		err = rtls_enclave_verifier_post_init(name, NULL);
-		if (err != RATS_TLS_ERR_NONE)
-			return err;
-	} else if (!strcmp(name, "nulltls")) {
+	if (!strcmp(name, "nulltls")) {
 		libtls_wrapper_nulltls_init();
 		err = rtls_rats_tls_post_init(name, NULL);
 		if (err != RATS_TLS_ERR_NONE)
 			return err;
 	} else if (!strcmp(name, "openssl")) {
 		libtls_wrapper_openssl_init();
-		libcrypto_wrapper_openssl_init();
 		err = rtls_rats_tls_post_init(name, NULL);
-		if (err != RATS_TLS_ERR_NONE)
-			return err;
-		err = rtls_enclave_crypto_post_init(name, NULL);
 		if (err != RATS_TLS_ERR_NONE)
 			return err;
 	} else
@@ -222,7 +183,7 @@ rats_tls_log_level_t rtls_loglevel_getenv(const char *name)
 rats_tls_err_t rtls_instance_init(const char *name, __attribute__((unused)) const char *realpath,
 				  __attribute__((unused)) void **handle)
 {
-	*handle = dlopen(realpath, RTLD_LAZY);
+	*handle = dlopen(realpath, RTLD_LAZY | RTLD_DEEPBIND);
 	if (*handle == NULL) {
 		RTLS_ERR("failed on dlopen(): %s\n", dlerror());
 		return -RATS_TLS_ERR_DLOPEN;

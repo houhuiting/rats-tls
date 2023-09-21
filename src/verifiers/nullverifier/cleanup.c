@@ -7,9 +7,9 @@
 #include <rats-tls/log.h>
 #include <rats-tls/verifier.h>
 
-enclave_verifier_err_t nullverifier_cleanup(enclave_verifier_ctx_t *ctx)
-{
-	RTLS_DEBUG("called enclave verifier ctx: %p\n", ctx);
+// enclave_verifier_err_t nullverifier_cleanup(enclave_verifier_ctx_t *ctx)
+// {
+// 	RTLS_DEBUG("called enclave verifier ctx: %p\n", ctx);
 
-	return ENCLAVE_VERIFIER_ERR_NONE;
-}
+// 	return ENCLAVE_VERIFIER_ERR_NONE;
+// }

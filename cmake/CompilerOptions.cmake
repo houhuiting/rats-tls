@@ -4,6 +4,8 @@ set(RATS_TLS_LDFLAGS "-fPIC -Bsymbolic -ldl")
 
 if(OCCLUM)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOCCLUM")
+    # Disable red zone as a workaround for https://github.com/occlum/occlum/issues/1196
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mno-red-zone")
 endif()
 
 if(DEBUG)

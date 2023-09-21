@@ -7,10 +7,10 @@
 #include <rats-tls/log.h>
 #include <rats-tls/verifier.h>
 
-enclave_verifier_err_t sgx_ecdsa_verifier_cleanup(__attribute__((unused))
-						  enclave_verifier_ctx_t *ctx)
-{
-	RTLS_DEBUG("called\n");
+// enclave_verifier_err_t sgx_ecdsa_verifier_cleanup(__attribute__((unused))
+// 						  enclave_verifier_ctx_t *ctx)
+// {
+// 	RTLS_DEBUG("called\n");
 
-	return ENCLAVE_VERIFIER_ERR_NONE;
-}
+// 	return ENCLAVE_VERIFIER_ERR_NONE;
+// }

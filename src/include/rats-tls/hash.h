@@ -23,22 +23,5 @@ typedef enum {
 	HASH_ALGO_SHA512 = 8,
 } hash_algo_t;
 
-static inline size_t hash_size_of_algo(uint8_t hash_algo)
-{
-	switch (hash_algo) {
-	case HASH_ALGO_RESERVED:
-	case HASH_ALGO_SHA256:
-		return SHA256_HASH_SIZE;
-		break;
-	case HASH_ALGO_SHA384:
-		return SHA384_HASH_SIZE;
-		break;
-	case HASH_ALGO_SHA512:
-		return SHA512_HASH_SIZE;
-		break;
-	default:
-		return 0;
-	}
-}
 
 #endif /* _RATS_TLS_HASH_H */

@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <rats-tls/log.h>
-#include <rats-tls/attester.h>
-#include "../../verifiers/tdx-ecdsa/tdx-ecdsa.h"
+// #include <rats-tls/log.h>
+// #include <rats-tls/attester.h>
+// #include "../../verifiers/tdx-ecdsa/tdx-ecdsa.h"
 
-enclave_attester_err_t tdx_ecdsa_attester_cleanup(enclave_attester_ctx_t *ctx)
-{
-	RTLS_DEBUG("called\n");
+// enclave_attester_err_t tdx_ecdsa_attester_cleanup(enclave_attester_ctx_t *ctx)
+// {
+// 	RTLS_DEBUG("called\n");
 
-	tdx_ctx_t *tdx_ctx = (tdx_ctx_t *)ctx->attester_private;
+// 	tdx_ctx_t *tdx_ctx = (tdx_ctx_t *)ctx->attester_private;
 
-	free(tdx_ctx);
+// 	free(tdx_ctx);
 
-	return ENCLAVE_ATTESTER_ERR_NONE;
-}
+// 	return ENCLAVE_ATTESTER_ERR_NONE;
+// }

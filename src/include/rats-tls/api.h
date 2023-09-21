@@ -141,11 +141,12 @@ typedef struct rtls_evidence {
 #define RATS_TLS_CONF_FLAGS_ATTESTER_ENFORCED (1UL << RATS_TLS_CONF_FLAGS_PRIVATE_MASK_SHIFT)
 #define RATS_TLS_CONF_FLAGS_VERIFIER_ENFORCED (RATS_TLS_CONF_FLAGS_ATTESTER_ENFORCED << 1)
 
-typedef int (*rats_tls_callback_t)(void *);
+//typedef int (*rats_tls_callback_t)(void *);
+typedef int (*rats_verify_claims_callback_t)(claim_t *claims, size_t claims_size, void *args);
 
 rats_tls_err_t rats_tls_init(const rats_tls_conf_t *conf, rats_tls_handle *handle);
 rats_tls_err_t rats_tls_set_verification_callback(rats_tls_handle *handle,
-						  rats_tls_callback_t user_callback);
+						  rats_verify_claims_callback_t user_callback);
 rats_tls_err_t rats_tls_negotiate(rats_tls_handle handle, int fd);
 rats_tls_err_t rats_tls_receive(rats_tls_handle handle, void *buf, size_t *buf_size);
 rats_tls_err_t rats_tls_transmit(rats_tls_handle handle, void *buf, size_t *buf_size);

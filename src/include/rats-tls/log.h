@@ -31,42 +31,42 @@ extern rats_tls_log_level_t global_log_level;
 
 #define RTLS_FATAL(fmt, ...)                               \
 	do {                                               \
-		__PR__(FATAL, stderr, fmt, ##__VA_ARGS__); \
+		__RATSPR__(FATAL, stderr, fmt, ##__VA_ARGS__); \
 	} while (0)
 
 #define RTLS_ERR(fmt, ...)                                 \
 	do {                                               \
-		__PR__(ERROR, stderr, fmt, ##__VA_ARGS__); \
+		__RATSPR__(ERROR, stderr, fmt, ##__VA_ARGS__); \
 	} while (0)
 
 #define RTLS_WARN(fmt, ...)                               \
 	do {                                              \
-		__PR__(WARN, stdout, fmt, ##__VA_ARGS__); \
+		__RATSPR__(WARN, stdout, fmt, ##__VA_ARGS__); \
 	} while (0)
 
 #define RTLS_INFO(fmt, ...)                               \
 	do {                                              \
-		__PR__(INFO, stdout, fmt, ##__VA_ARGS__); \
+		__RATSPR__(INFO, stdout, fmt, ##__VA_ARGS__); \
 	} while (0)
 
 #define RTLS_DEBUG(fmt, ...)                               \
 	do {                                               \
-		__PR__(DEBUG, stdout, fmt, ##__VA_ARGS__); \
+		__RATSPR__(DEBUG, stdout, fmt, ##__VA_ARGS__); \
 	} while (0)
 
 #ifdef SGX
-  #define __PR__(level, io, fmt, ...)                                                 \
+  #define __RATSPR__(level, io, fmt, ...)                                                 \
 	do {                                                                          \
 		if (global_log_level <= RATS_TLS_LOG_LEVEL_##level)                \
 			printf("[" #level "] %s()@L%d: " fmt, __FUNCTION__, __LINE__, \
 			       ##__VA_ARGS__);                                        \
 	} while (0)
 #else
-  #define __PR__(level, io, fmt, ...)                                                   \
+  #define __RATSPR__(level, io, fmt, ...)                                                   \
 	do {                                                                            \
 		if (global_log_level <= RATS_TLS_LOG_LEVEL_##level) {                \
 			if (RATS_TLS_LOG_LEVEL_##level !=                            \
-			    RATS_TLS_LOG_LEVEL_DEBUG) {                              \
+			  	RATS_TLS_LOG_LEVEL_DEBUG) {                              \
 				FPRINTF(io, "[" #level "] " fmt, ##__VA_ARGS__);        \
 			} else {                                                        \
 				time_t __t__ = time(NULL);                              \

@@ -12,6 +12,7 @@
 #include <internal/core.h>
 #include <internal/dice.h>
 #include "openssl.h"
+#include <librats/api.h>
 
 static int rtls_memcpy_s(void *dst, uint32_t dst_size, const void *src, uint32_t num_bytes)
 {
@@ -163,6 +164,12 @@ int verify_certificate(int preverify_ok, X509_STORE_CTX *ctx)
 		RTLS_ERR("failed to get cert from x509 context!\n");
 		return 0;
 	}
+	uint8_t *certificate = NULL;
+	size_t certificate_size = i2d_X509(cert, &certificate);
+	if (!certificate_size) {
+		RTLS_ERR("bad certificate format\n");
+		return 0;
+	}
 
 	if (!preverify_ok) {
 		int err = X509_STORE_CTX_get_error(ctx);
@@ -198,49 +205,53 @@ int verify_certificate(int preverify_ok, X509_STORE_CTX *ctx)
 
 		return 0;
 	}
-
-	/* Get pubkey in SubjectPublicKeyInfo format from cert */
-	EVP_PKEY *pkey = X509_get_pubkey(cert);
-	if (!pkey) {
-		RTLS_ERR("Unable to decode the public key from certificate\n");
-		return TLS_WRAPPER_ERR_INVALID;
+	printf("The certificate length is %ld\n", certificate_size);
+	for (int i = 0; i < certificate_size ;i++)
+	{
+		printf("%0x", certificate[i]);
 	}
-	int pubkey_buffer_size = i2d_PUBKEY(pkey, NULL);
-	unsigned char pubkey_buffer[pubkey_buffer_size];
-	unsigned char *p = pubkey_buffer;
-	i2d_PUBKEY(pkey, &p);
-	EVP_PKEY_free(pkey);
+	printf("\n");
 
-	/* Extract the RATS-TLS certificate evidence_buffer(optional for nullverifier) and endorsements_buffer(optional) from the TLS
-	 * certificate extension.
-	 */
-	uint8_t *evidence_buffer = NULL;
-	size_t evidence_buffer_size = 0;
-	uint8_t *endorsements_buffer = NULL;
-	size_t endorsements_buffer_size = 0;
+    typedef struct {
+		const claim_t *custom_claims;
+		size_t custom_claims_size;
+	} args_t;
+	args_t args = { .custom_claims = tls_ctx->rtls_handle->config.custom_claims, .custom_claims_size = tls_ctx->rtls_handle->config.custom_claims_length };
 
-	int rc = find_extension_from_cert(cert, TCG_DICE_TAGGED_EVIDENCE_OID, &evidence_buffer,
-					  &evidence_buffer_size, true);
-	if (rc != SSL_SUCCESS) {
-		RTLS_ERR("failed to extract the evidence extensions from the certificate %d\n", rc);
-		return rc;
+	rats_conf_t conf;
+	memset(&conf, 0, sizeof(rats_conf_t));
+
+	memcpy(conf.verifier_type, tls_ctx->rtls_handle->config.verifier_type, sizeof(tls_ctx->rtls_handle->config.verifier_type));
+	memcpy(conf.crypto_type, tls_ctx->rtls_handle->config.crypto_type, sizeof(tls_ctx->rtls_handle->config.crypto_type));
+	if (tls_ctx->rtls_handle->config.log_level == RATS_TLS_LOG_LEVEL_DEBUG) {
+		conf.log_level = RATS_LOG_LEVEL_DEBUG;
 	}
-
-	rc = find_extension_from_cert(cert, TCG_DICE_ENDORSEMENT_MANIFEST_OID, &endorsements_buffer,
-				      &endorsements_buffer_size, true);
-	if (rc != SSL_SUCCESS) {
-		free(evidence_buffer);
-		RTLS_ERR("failed to extract the endorsements extensions from the certificate %d\n",
-			 rc);
-		return rc;
+	else if (tls_ctx->rtls_handle->config.log_level == RATS_TLS_LOG_LEVEL_INFO) {
+		conf.log_level = RATS_LOG_LEVEL_INFO;
 	}
-
-	tls_wrapper_err_t t_err = tls_wrapper_verify_certificate_extension(
-		tls_ctx, pubkey_buffer, pubkey_buffer_size, evidence_buffer, evidence_buffer_size,
-		endorsements_buffer, endorsements_buffer_size);
-	if (t_err != TLS_WRAPPER_ERR_NONE) {
-		RTLS_ERR("failed to verify certificate extension %#x\n", t_err);
+	else if (tls_ctx->rtls_handle->config.log_level == RATS_TLS_LOG_LEVEL_WARN) {
+		conf.log_level = RATS_LOG_LEVEL_WARN;
+	}
+	else if (tls_ctx->rtls_handle->config.log_level == RATS_TLS_LOG_LEVEL_ERROR) {
+		conf.log_level = RATS_LOG_LEVEL_ERROR;
+	}
+	else if (tls_ctx->rtls_handle->config.log_level == RATS_TLS_LOG_LEVEL_FATAL) {
+		conf.log_level = RATS_LOG_LEVEL_FATAL;
+	}
+	else if (tls_ctx->rtls_handle->config.log_level == RATS_TLS_LOG_LEVEL_NONE) {
+		conf.log_level = RATS_LOG_LEVEL_NONE;
+	}
+	else if (tls_ctx->rtls_handle->config.log_level == RATS_TLS_LOG_LEVEL_MAX) {
+		conf.log_level = RATS_LOG_LEVEL_MAX;
+	}
+	
+	rats_verifier_err_t ret = librats_verify_attestation_certificate(conf, certificate, certificate_size, tls_ctx->rtls_handle->user_callback, &args);
+	if (ret != RATS_VERIFIER_ERR_NONE) {
+		RTLS_ERR("Failed to verify certificate \n");
 		return 0;
+	}
+	else {
+		RTLS_DEBUG("librats success verify cert! \n");
 	}
 
 	return SSL_SUCCESS;

@@ -1,0 +1,1 @@
+cmd='cd;/root/hht/rats-tls/src/external/librats/src/librats;&&;cmake;-DRATS_BUILD_MODE=sgx;-DBUILD_SAMPLES=on;-H.;-Bbuild'

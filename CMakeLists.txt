@@ -97,6 +97,7 @@ if(SGX)
     include(SGXCommon)
     include(SGXSSL)
     include(LibCBOR)
+    include(Librats)
 endif()
 
 # Subdirectory

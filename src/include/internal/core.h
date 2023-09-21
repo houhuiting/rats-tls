@@ -22,11 +22,8 @@
 typedef struct rtls_core_context_t {
 	rats_tls_conf_t config;
 	unsigned long flags;
-	rats_tls_callback_t user_callback;
-	enclave_attester_ctx_t *attester;
-	enclave_verifier_ctx_t *verifier;
+	rats_verify_claims_callback_t user_callback;
 	tls_wrapper_ctx_t *tls_wrapper;
-	crypto_wrapper_ctx_t *crypto_wrapper;
 } rtls_core_context_t;
 
 #ifdef SGX

@@ -37,10 +37,19 @@ rats_tls_err_t rats_tls_init(const rats_tls_conf_t *conf, rats_tls_handle *handl
 		goto err_ctx;
 	}
 
-	if (ctx->config.log_level < 0 || ctx->config.log_level >= RATS_TLS_LOG_LEVEL_MAX) {
+	if (ctx->config.log_level < 0 || ctx->config.log_level > RATS_TLS_LOG_LEVEL_MAX) {
 		ctx->config.log_level = global_core_context.config.log_level;
+		global_log_level = ctx->config.log_level;
 		RTLS_WARN("log level reset to global value %d\n",
 			  global_core_context.config.log_level);
+	}
+	else if (ctx->config.log_level == RATS_TLS_LOG_LEVEL_MAX) {
+		global_log_level = global_core_context.config.log_level;
+		RTLS_WARN("User did not enter log_level, log level reset to global value %d\n",
+			  global_core_context.config.log_level);
+	}
+	else {
+		global_log_level = ctx->config.log_level;
 	}
 
 	/* FIXME: it is intended to use the certificate with different algorithm */
@@ -57,8 +66,6 @@ rats_tls_err_t rats_tls_init(const rats_tls_conf_t *conf, rats_tls_handle *handl
 		RTLS_WARN("certificate algorithm reset to global value %d\n",
 			  global_core_context.config.cert_algo);
 	}
-
-	global_log_level = ctx->config.log_level;
 
 	/* Make a copy of user-defined custom claims */
 	if (conf->custom_claims && conf->custom_claims_length) {
@@ -77,41 +84,8 @@ rats_tls_err_t rats_tls_init(const rats_tls_conf_t *conf, rats_tls_handle *handl
 		ctx->config.custom_claims_length = 0;
 	}
 
-	/* Select the target crypto wrapper to be used */
-	char *choice = ctx->config.crypto_type;
-	if (choice[0] == '\0') {
-		choice = global_core_context.config.crypto_type;
-		if (choice[0] == '\0')
-			choice = NULL;
-	}
-	err = rtls_crypto_wrapper_select(ctx, choice);
-	if (err != RATS_TLS_ERR_NONE)
-		goto err_ctx;
-
-	/* Select the target attester to be used */
-	choice = ctx->config.attester_type;
-	if (choice[0] == '\0') {
-		choice = global_core_context.config.attester_type;
-		if (choice[0] == '\0')
-			choice = NULL;
-	}
-	err = rtls_attester_select(ctx, choice, ctx->config.cert_algo);
-	if (err != RATS_TLS_ERR_NONE)
-		goto err_ctx;
-
-	/* Select the target verifier to be used */
-	choice = ctx->config.verifier_type;
-	if (choice[0] == '\0') {
-		choice = global_core_context.config.verifier_type;
-		if (choice[0] == '\0')
-			choice = NULL;
-	}
-	err = rtls_verifier_select(ctx, choice, ctx->config.cert_algo);
-	if (err != RATS_TLS_ERR_NONE)
-		goto err_ctx;
-
 	/* Select the target tls wrapper to be used */
-	choice = ctx->config.tls_type;
+	char *choice = ctx->config.tls_type;
 	if (choice[0] == '\0') {
 		choice = global_core_context.config.tls_type;
 		if (choice[0] == '\0')

@@ -6,7 +6,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <rats-tls/claim.h>
 #include <rats-tls/err.h>
 #include <rats-tls/log.h>
 
@@ -14,17 +13,6 @@ static void _free_claim(claim_t *claim)
 {
 	free(claim->name);
 	free(claim->value);
-}
-
-void free_claims_list(claim_t *claims, size_t claims_length)
-{
-	if (!claims)
-		return;
-
-	for (size_t j = 0; j < claims_length; j++)
-		_free_claim(&claims[j]);
-
-	free(claims);
 }
 
 int _add_claim(claim_t *claim, const void *name, size_t name_size, const void *value,

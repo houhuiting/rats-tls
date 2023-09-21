@@ -9,6 +9,7 @@ set(INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/../../include
                  ${CMAKE_CURRENT_SOURCE_DIR}/../../verifiers/sgx-ecdsa
                  ${CMAKE_CURRENT_SOURCE_DIR}/../../verifiers/sgx-ecdsa-qve
                  ${CMAKE_CURRENT_SOURCE_DIR}/../../verifiers/sgx-la
+                 /usr/local/include/librats
                  )
 include_directories(${INCLUDE_DIRS})
 

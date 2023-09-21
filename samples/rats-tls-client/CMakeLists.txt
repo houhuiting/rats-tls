@@ -5,6 +5,7 @@ if(NOT SGX)
     set(CMAKE_C_FLAGS "-fPIE ${CMAKE_C_FLAGS}")
 endif()
 
+
 if(SGX)
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
     include(CustomInstallDirs)
@@ -33,8 +34,11 @@ if(SGX)
                              )
     set(EDL_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/../sgx-stub-enclave
                          ${CMAKE_CURRENT_SOURCE_DIR}/../../src/include/edl
+                         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/external/librats/src/librats/include/edl
                          )
-    set(DEPEND_UNTRUSTED_LIBS ${CMAKE_BINARY_DIR}/src/sgx/untrust/librats_tls_u.a)
+    set(DEPEND_UNTRUSTED_LIBS ${CMAKE_BINARY_DIR}/src/sgx/untrust/librats_tls_u.a
+                              ${LIBRATS_LIB_PATH}/librats_u.a
+                              )
 
 else()
     set(INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/../../src/include
@@ -42,8 +46,10 @@ else()
                      ${CMAKE_CURRENT_SOURCE_DIR}/../../src/include/rats-tls
                      ${RATS_TLS_INSTALL_INCLUDE_PATH}
                      ${RATS_TLS_INSTALL_INCLUDE_PATH}/edl
+                     ${RATS_TLS_INSTALL_PATH}/include
+                     ${RATS_TLS_INSTALL_PATH}/include/librats
                      )
-    set(LIBRARY_DIRS ${RATS_TLS_INSTALL_LIB_PATH})
+    set(LIBRARY_DIRS ${RATS_TLS_INSTALL_LIB_PATH} /usr/local/lib/librats)
 endif()
 
 include_directories(${INCLUDE_DIRS})
@@ -63,7 +69,7 @@ if(SGX)
     add_dependencies(${PROJECT_NAME} sgx_stub_enclave-sign)
 else()
     add_executable(${PROJECT_NAME} ${SOURCES})
-    target_link_libraries(${PROJECT_NAME} rats_tls)
+    target_link_libraries(${PROJECT_NAME} rats_tls rats_lib)
 endif()
 
 install(TARGETS ${PROJECT_NAME}

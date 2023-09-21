@@ -8,6 +8,7 @@
 #define _RTLS_SYSCALL_H_
 
 #include <sys/types.h>
+#include <stdbool.h>
 
 struct ocall_dirent {
 	u_int64_t d_ino;

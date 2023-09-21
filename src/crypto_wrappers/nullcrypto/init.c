@@ -9,11 +9,11 @@
 
 static unsigned int dummy_private;
 
-crypto_wrapper_err_t nullcrypto_init(crypto_wrapper_ctx_t *ctx)
-{
-	RTLS_DEBUG("ctx %p\n", ctx);
+// crypto_wrapper_err_t nullcrypto_init(crypto_wrapper_ctx_t *ctx)
+// {
+// 	RTLS_DEBUG("ctx %p\n", ctx);
 
-	ctx->crypto_private = &dummy_private;
+// 	ctx->crypto_private = &dummy_private;
 
-	return CRYPTO_WRAPPER_ERR_NONE;
-}
+// 	return CRYPTO_WRAPPER_ERR_NONE;
+// }

@@ -35,7 +35,7 @@ typedef struct {
 	tls_wrapper_err_t (*init)(tls_wrapper_ctx_t *ctx);
 	tls_wrapper_err_t (*use_privkey)(tls_wrapper_ctx_t *ctx, rats_tls_cert_algo_t algo,
 					 void *privkey_buf, size_t privkey_len);
-	tls_wrapper_err_t (*use_cert)(tls_wrapper_ctx_t *ctx, rats_tls_cert_info_t *cert_info);
+	tls_wrapper_err_t (*use_cert)(tls_wrapper_ctx_t *ctx, uint8_t *certificate, size_t certificate_size);
 	tls_wrapper_err_t (*negotiate)(tls_wrapper_ctx_t *ctx, int fd);
 	tls_wrapper_err_t (*transmit)(tls_wrapper_ctx_t *ctx, void *buf, size_t *buf_size);
 	tls_wrapper_err_t (*receive)(tls_wrapper_ctx_t *ctx, void *buf, size_t *buf_size);

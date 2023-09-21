@@ -1,6 +1,9 @@
 # Project name
 project(attester_sgx_ecdsa)
 
+set(INCLUDE_DIRS /usr/local/include
+                 /usr/local/include/librats
+                 )
 # Set include directory
 list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
                          ${SGXSDK_INSTALL_INCLUDE_PATH}

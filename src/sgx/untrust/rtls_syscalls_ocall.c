@@ -18,6 +18,7 @@
 #include <sys/sysmacros.h>
 #include "rtls_syscalls.h"
 #include "cpu.h"
+#define SGX_DEVICE_MAJOR_NUM 10
 
 void ocall_exit(void)
 {

@@ -19,7 +19,7 @@
 #include <rats-tls/log.h>
 #include <rats-tls/claim.h>
 
-#define DEFAULT_PORT 1234
+#define DEFAULT_PORT 55555
 #define DEFAULT_IP   "127.0.0.1"
 
 // clang-format off
@@ -205,7 +205,7 @@ int rats_tls_server_startup(rats_tls_log_level_t log_level, char *attester_type,
 
 	/* Bind the server socket */
 	if (bind(sockfd, (struct sockaddr *)&s_addr, sizeof(s_addr)) == -1) {
-		RTLS_ERR("Failed to call bind()");
+		RTLS_ERR("Failed to call bind()\n");
 		return -1;
 	}
 
@@ -337,7 +337,7 @@ int main(int argc, char **argv)
 	char *crypto_type = "";
 	bool mutual = false;
 	bool provide_endorsements = false;
-	rats_tls_log_level_t log_level = RATS_TLS_LOG_LEVEL_INFO;
+	rats_tls_log_level_t log_level = RATS_TLS_LOG_LEVEL_MAX;
 	char *ip = DEFAULT_IP;
 	int port = DEFAULT_PORT;
 	bool debug_enclave = false;

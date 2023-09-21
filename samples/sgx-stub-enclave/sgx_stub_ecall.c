@@ -14,6 +14,7 @@
 
 #include "rats-tls/api.h"
 #include "sgx_stub_t.h"
+#include <sgx_tcrypto.h>
 
 int ecall_rtls_server_startup(rats_tls_log_level_t log_level, char *attester_type,
 			      char *verifier_type, char *tls_type, char *crypto_type,

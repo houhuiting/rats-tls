@@ -30,11 +30,15 @@ if(SGX)
                      )
     list(APPEND LIBRARY_DIRS ${CMAKE_BINARY_DIR}/src/sgx/untrust
                              ${CMAKE_BINARY_DIR}/samples/sgx-stub-enclave
+                             /usr/local/lib/librats
                              )
     set(EDL_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/../sgx-stub-enclave
                          ${CMAKE_CURRENT_SOURCE_DIR}/../../src/include/edl
+                         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/external/librats/src/librats/include/edl
                          )
-    set(DEPEND_UNTRUSTED_LIBS ${CMAKE_BINARY_DIR}/src/sgx/untrust/librats_tls_u.a)
+    set(DEPEND_UNTRUSTED_LIBS ${CMAKE_BINARY_DIR}/src/sgx/untrust/librats_tls_u.a
+                              ${LIBRATS_LIB_PATH}/librats_u.a
+                              )
 
 else()
     set(INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/../../src/include
@@ -43,7 +47,7 @@ else()
                      ${RATS_TLS_INSTALL_INCLUDE_PATH}
                      ${RATS_TLS_INSTALL_INCLUDE_PATH}/edl
                      )
-    set(LIBRARY_DIRS ${RATS_TLS_INSTALL_LIB_PATH})
+    set(LIBRARY_DIRS ${RATS_TLS_INSTALL_LIB_PATH} /usr/local/lib/librats)
 endif()
 
 include_directories(${INCLUDE_DIRS})
@@ -64,7 +68,7 @@ if(SGX)
     add_dependencies(${PROJECT_NAME} sgx_stub_enclave-sign)
 else()
     add_executable(${PROJECT_NAME} ${SOURCES})
-    target_link_libraries(${PROJECT_NAME} rats_tls)
+    target_link_libraries(${PROJECT_NAME} rats_tls rats_lib)
 endif()
 
 install(TARGETS ${PROJECT_NAME}

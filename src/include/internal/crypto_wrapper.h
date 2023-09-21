@@ -15,9 +15,6 @@
 extern rats_tls_err_t rtls_crypto_wrapper_load_all(void);
 extern rats_tls_err_t rtls_crypto_wrapper_load_single(const char *);
 extern rats_tls_err_t rtls_crypto_wrapper_select(rtls_core_context_t *, const char *);
-
-extern crypto_wrapper_ctx_t *crypto_wrappers_ctx[CRYPTO_WRAPPER_TYPE_MAX];
-extern crypto_wrapper_opts_t *crypto_wrappers_opts[CRYPTO_WRAPPER_TYPE_MAX];
 extern unsigned int crypto_wrappers_nums;
 extern unsigned registerd_crypto_wrapper_nums;
 

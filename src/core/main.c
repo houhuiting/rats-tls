@@ -27,13 +27,10 @@ rats_tls_log_level_t global_log_level = RATS_TLS_LOG_LEVEL_DEFAULT;
 
 #ifdef SGX
 // clang-format off
-#define INSTANCE_NUM  8
+#define INSTANCE_NUM  2
 #define INSTANCE_NAME 32
 // clang-format on
-char enclave_instance_name[INSTANCE_NUM][INSTANCE_NAME] = { "nullcrypto",    "nullattester",
-							    "nullverifier",  "sgx_ecdsa",
-							    "sgx_ecdsa_qve", "sgx_la",
-							    "nulltls",	     "openssl" };
+char enclave_instance_name[INSTANCE_NUM][INSTANCE_NAME] = { "nulltls", "openssl" };
 void librats_tls_init(void)
 #else
 void __attribute__((constructor)) librats_tls_init(void)
@@ -72,30 +69,31 @@ void __attribute__((constructor)) librats_tls_init(void)
 				 enclave_instance_name[i]);
 			rtls_exit();
 		}
+		printf("rtls_instance_init success!\n");
 	}
 #else
-	/* Load all crypto wrapper instances */
-	rats_tls_err_t err = rtls_crypto_wrapper_load_all();
-	if (err != RATS_TLS_ERR_NONE) {
-		RTLS_FATAL("failed to load any crypto wrapper %#x\n", err);
-		rtls_exit();
-	}
+	// /* Load all crypto wrapper instances */
+	// rats_tls_err_t err = rtls_crypto_wrapper_load_all();
+	// if (err != RATS_TLS_ERR_NONE) {
+	// 	RTLS_FATAL("failed to load any crypto wrapper %#x\n", err);
+	// 	rtls_exit();
+	// }
 
-	/* Load all enclave attester instances */
-	err = rtls_enclave_attester_load_all();
-	if (err != RATS_TLS_ERR_NONE) {
-		RTLS_FATAL("failed to load any enclave attester %#x\n", err);
-		rtls_exit();
-	}
-	/* Load all enclave verifier instances */
-	err = rtls_enclave_verifier_load_all();
-	if (err != RATS_TLS_ERR_NONE) {
-		RTLS_FATAL("failed to load any enclave verifier %#x\n", err);
-		rtls_exit();
-	}
+	// /* Load all enclave attester instances */
+	// err = rtls_enclave_attester_load_all();
+	// if (err != RATS_TLS_ERR_NONE) {
+	// 	RTLS_FATAL("failed to load any enclave attester %#x\n", err);
+	// 	rtls_exit();
+	// }
+	// /* Load all enclave verifier instances */
+	// err = rtls_enclave_verifier_load_all();
+	// if (err != RATS_TLS_ERR_NONE) {
+	// 	RTLS_FATAL("failed to load any enclave verifier %#x\n", err);
+	// 	rtls_exit();
+	// }
 
 	/* Load all tls wrapper instances */
-	err = rtls_tls_wrapper_load_all();
+	rats_tls_err_t err = rtls_tls_wrapper_load_all();
 	if (err != RATS_TLS_ERR_NONE) {
 		RTLS_FATAL("failed to load any tls wrapper %#x\n", err);
 		rtls_exit();
